@@ -50,6 +50,7 @@ class AudioPlayerStatus {
 class AudioPlayer {
   static int _curr_dart_vlc_id = 2;
   static Uuid _uuid_provider = Uuid();
+  static bool _dart_vlc_initialized = false;
 
   bool is_desktop;
   int dart_vlc_id;
@@ -76,6 +77,10 @@ class AudioPlayer {
       : is_desktop = (!kIsWeb && (Platform.isWindows || Platform.isLinux)),
         dart_vlc_id = multi_player ? _get_next_id() : 1 {
     if (is_desktop) {
+      if (!_dart_vlc_initialized) {
+        dart_vlc.DartVLC.initialize();
+        _dart_vlc_initialized = true;
+      }
       desktop_player = dart_vlc.Player(id: dart_vlc_id);
       _desktop_playback_stream = desktop_player!.playbackStream.listen((event) {
         status.is_playing = event.isPlaying;
