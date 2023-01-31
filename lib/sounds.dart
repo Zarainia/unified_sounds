@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:dart_vlc/dart_vlc.dart' as dart_vlc;
 import 'package:flutter/foundation.dart' show kIsWeb;
+
+import 'package:dart_vlc/dart_vlc.dart' as dart_vlc;
 import 'package:just_audio/just_audio.dart' as just_audio;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -112,40 +113,40 @@ class AudioPlayer {
     }
   }
 
-  void load_file(String path) {
+  Future load_file(String path) async {
     curr_media = dart_vlc.Media.file(File(path));
     if (is_desktop)
       desktop_player!.open(curr_media!, autoStart: false);
     else
-      other_player!.setFilePath(path);
+      await other_player!.setFilePath(path);
   }
 
-  void load_url(String url) {
+  Future load_url(String url) async {
     curr_media = dart_vlc.Media.network(url);
     if (is_desktop)
       desktop_player!.open(curr_media!, autoStart: false);
     else
-      other_player!.setUrl(url);
+      await other_player!.setUrl(url);
   }
 
-  void load_asset(String path) {
+  Future load_asset(String path) async {
     curr_media = dart_vlc.Media.asset(path);
     if (is_desktop)
       desktop_player!.open(curr_media!, autoStart: false);
     else
-      other_player!.setAsset(path);
+      await other_player!.setAsset(path);
   }
 
-  void load_bytes(Uint8List bytes, String? name) {
+  Future load_bytes(Uint8List bytes, String? name) async {
     if (name == null) name = _uuid_provider.v1();
     if (is_desktop) {
-      media_from_bytes(name, bytes).then((dart_vlc.Media new_media) {
+      await media_from_bytes(name, bytes).then((dart_vlc.Media new_media) {
         curr_media = new_media;
         desktop_player!.open(curr_media!, autoStart: false);
       });
       _temp_file_names.add(name);
     } else
-      other_player!.setAudioSource(BytesAudioSource(bytes));
+      await other_player!.setAudioSource(BytesAudioSource(bytes));
   }
 
   void play() {

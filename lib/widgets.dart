@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+
 import 'package:intl/intl.dart';
 
 import 'sounds.dart';
@@ -14,7 +15,6 @@ Duration _duration_clamp(Duration duration, Duration min, Duration max) {
 }
 
 KeyEventResult _control_sound_via_keyboard(RawKeyEvent event, AudioPlayer sound_player) {
-  print("pressed");
   if (event.isKeyPressed(LogicalKeyboardKey.space)) {
     sound_player.play_or_pause();
     return KeyEventResult.handled;
@@ -112,8 +112,9 @@ class DisplaySoundPlayer extends StatefulWidget {
   Widget display_widget;
   Color shadow_colour;
   Color position_colour;
+  KeyEventResult Function(RawKeyEvent event)? on_key;
 
-  DisplaySoundPlayer({required this.name, required this.contents, required this.display_widget, this.shadow_colour = Colors.grey, this.position_colour = Colors.white});
+  DisplaySoundPlayer({required this.name, required this.contents, required this.display_widget, this.shadow_colour = Colors.grey, this.position_colour = Colors.white, this.on_key});
 
   @override
   _DisplaySoundPlayerState createState() => _DisplaySoundPlayerState();
@@ -150,51 +151,56 @@ class _DisplaySoundPlayerState extends State<DisplaySoundPlayer> with TickerProv
 
   @override
   Widget build(BuildContext context) {
-    return FocusScope(
-        child: Stack(
-          children: [
-            SizedBox.expand(
-              child: widget.display_widget,
-            ),
-            Positioned(
-              child: Stack(
-                children: [
-                  Column(
-                    children: [
-                      SizedBox(height: 25),
-                      Container(
-                        child: PlaybackSlider(
-                          sound_player: sound_player,
-                          playback_limit: playback_limit,
-                          playback_position: playback_position,
-                          on_change: (double new_position) {
-                            setState(() {
-                              playback_position = Duration(milliseconds: new_position.toInt());
-                            });
-                          },
-                          position_colour: widget.position_colour,
-                        ),
-                        padding: EdgeInsets.only(top: 20, left: 10, right: 10),
-                        color: widget.shadow_colour,
+    return Focus(
+      child: Stack(
+        children: [
+          SizedBox.expand(
+            child: widget.display_widget,
+          ),
+          Positioned(
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    SizedBox(height: 25),
+                    Container(
+                      child: PlaybackSlider(
+                        sound_player: sound_player,
+                        playback_limit: playback_limit,
+                        playback_position: playback_position,
+                        on_change: (double new_position) {
+                          setState(() {
+                            playback_position = Duration(milliseconds: new_position.toInt());
+                          });
+                        },
+                        position_colour: widget.position_colour,
                       ),
-                    ],
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  ),
-                  PlaybackControls(
-                    animation_controller: button_animation_controller,
-                    sound_player: sound_player,
-                  ),
-                ],
-                clipBehavior: Clip.none,
-              ),
-              bottom: 0,
-              left: 0,
-              right: 0,
+                      padding: EdgeInsets.only(top: 20, left: 10, right: 10),
+                      color: widget.shadow_colour,
+                    ),
+                  ],
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ),
+                PlaybackControls(
+                  animation_controller: button_animation_controller,
+                  sound_player: sound_player,
+                ),
+              ],
+              clipBehavior: Clip.none,
             ),
-          ],
-        ),
-        autofocus: true,
-        onKey: (_, event) => _control_sound_via_keyboard(event, sound_player));
+            bottom: 0,
+            left: 0,
+            right: 0,
+          ),
+        ],
+      ),
+      autofocus: true,
+      onKey: (_, event) {
+        var result = widget.on_key?.call(event);
+        if (result == KeyEventResult.handled) return result!;
+        return _control_sound_via_keyboard(event, sound_player);
+      },
+    );
   }
 }
 
@@ -283,7 +289,7 @@ class _SimpleSoundPlayerState extends State<SimpleSoundPlayer> with TickerProvid
           },
           excludeFromSemantics: true,
         ),
-        color: focused ? widget.focused_colour : null,
+        shape: RoundedRectangleBorder(side: BorderSide(color: (focused ? widget.focused_colour : null) ?? Colors.transparent), borderRadius: BorderRadius.all(Radius.circular(5))),
       ),
       node: focus_node,
       onKey: (_, event) => _control_sound_via_keyboard(event, sound_player),
