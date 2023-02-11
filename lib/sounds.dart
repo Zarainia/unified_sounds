@@ -137,7 +137,7 @@ class AudioPlayer {
       await other_player!.setAsset(path);
   }
 
-  Future load_bytes(Uint8List bytes, String? name) async {
+  Future load_bytes(Uint8List bytes, [String? name]) async {
     if (name == null) name = _uuid_provider.v1();
     if (is_desktop) {
       await media_from_bytes(name, bytes).then((dart_vlc.Media new_media) {
